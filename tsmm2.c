@@ -868,15 +868,18 @@ typedef struct workNfo {
 	cairo_surface_t *bg;
 	const char * title_text;
 	const char * destdir;
+	const char * nameprefix;
 	int compression;
 } workNfo;
 
 static void * worker (void *arg) {
-	workNfo *n = (workNfo*) arg;
+	workNfo const * const n = (workNfo const * const) arg;
 	int64_t i = 0;
 	char filename[1024] = "";
 	cairo_surface_t * ct;
 	cairo_t* cr;
+
+	//localize variables
 	const float w = n->w;
 	const float h = n->h;
 	const int64_t fn_start = n->fn_start;
@@ -898,7 +901,7 @@ static void * worker (void *arg) {
 			splash (cr, w, h, n->rate, n->fn_start, n->fn_end, n->title_text);
 		}
 
-		sprintf (filename, "%s/t%07"PRId64".png", n->destdir, i);
+		sprintf (filename, "%s/%s%08"PRId64".png", n->destdir, n->nameprefix, i);
 #ifdef CUSTOM_PNG_WRITER
 		if (write_png (ct, filename, compression))
 #else
@@ -954,6 +957,7 @@ static void usage (int status) {
   -h, --help                display this help and exit\n\
   -H, --height <px>         specify image height (default: 360)\n\
   -j, --concurrency <n>     number of parallel jobs (default: 2)\n\
+  -n, --name-prefix <txt>   filename prefix (default: 't')\n\
   -p, --progress            report progress\n\
   -s, --start-frame <fn>    specify timecode start frame number\n\
                             (default: 0)\n\
@@ -992,7 +996,7 @@ libcairo's default (when this tool is built without zlib/png support) is -C 6.\n
 Examples:\n\
  mkdir /tmp/tsmm2;\n\
  tsmm2 -v -f 30/1 -H 720 -d 300 /tmp/tsmm2;\n\
- ffmpeg -r 30/1 -i /tmp/tsmm2/t%%07d.png /tmp/tsmm2s.mp4\n\
+ ffmpeg -r 30/1 -i /tmp/tsmm2/t%%08d.png /tmp/tsmm2s.mp4\n\
 \n");
 	printf ("Report bugs to Robin Gareus <robin@gareus.org>\n"
 	        "Website and tracker: <https://github.com/x42/tsmm2>\n");
@@ -1011,6 +1015,7 @@ static struct option const long_options[] =
 	{"help",         no_argument, 0, 'h'},
 	{"height",       required_argument, 0, 'H'},
 	{"concurrency",  required_argument, 0, 'j'},
+	{"name-prefix",  required_argument, 0, 'n'},
 	{"progress",     no_argument, 0, 'p'},
 	{"start-frame",  required_argument, 0, 's'},
 	{"smpte-hdv",    no_argument, 0, 'S'},
@@ -1031,7 +1036,8 @@ int main (int argc, char **argv) {
 	char destdir[1024];
 	char frame_text[128] = "";
 	char title_text[128] = "http://gareus.org/t/tsmm2";
-  char fontname[120] = FONTFILE;
+	char fontname[120] = FONTFILE;
+	char nameprefix[32] = "t";
 	char font[128];
 	TimecodeRate rate;
 	Rational aspect;
@@ -1064,8 +1070,9 @@ int main (int argc, char **argv) {
 			   "h"  /* help */
 			   "H:" /* height */
 			   "j:" /* concurrency */
+			   "n:" /* name-prefix */
 			   "p"  /* progress */
-			   "s:" /* start frame */
+			   "s:" /* start-frame */
 			   "S"  /* smpte-hdv */
 			   "t:" /* frame-text */
 			   "T:" /* title-text */
@@ -1126,6 +1133,11 @@ int main (int argc, char **argv) {
 
 			case 'j':
 				jobs = atoi (optarg);
+				break;
+
+			case 'n':
+				strncpy (nameprefix, optarg, sizeof(nameprefix));
+				nameprefix[sizeof(nameprefix) -1 ] = '\0';
 				break;
 
 			case 'p':
@@ -1243,8 +1255,8 @@ int main (int argc, char **argv) {
 		framenumber_to_timecode (&tc, &rate, fn_end -1);
 		format_tc (tce, &rate, &tc);
 		printf ("* Timecode:    %s -> %s\n", tcs, tce);
-		printf ("* File first:  %s/t%07d.png\n", destdir, 0);
-		printf ("* File last:   %s/t%07"PRId64".png\n", destdir, (fn_end - fn_start - 1));
+		printf ("* File first:  %s/%s%08d.png\n", destdir, nameprefix, 0);
+		printf ("* File last:   %s/%s%08"PRId64".png\n", destdir, nameprefix, (fn_end - fn_start - 1));
 		printf ("* Concurrency: %d\n", jobs);
 	}
 
@@ -1283,6 +1295,7 @@ int main (int argc, char **argv) {
 		nfo[i].bg = cs;
 		nfo[i].title_text = title_text;
 		nfo[i].destdir = destdir;
+		nfo[i].nameprefix = nameprefix;
 		nfo[i].compression = compression;
 		nfo[i].fn_start = fn_start;
 		nfo[i].fn_end = fn_end;
@@ -1328,12 +1341,12 @@ int main (int argc, char **argv) {
 
 	if (verbose & 1) {
 		char filename[1024] = "";
-		sprintf (filename, "%s/t%07"PRId64".png", destdir, frame_cnt);
+		sprintf (filename, "%s/%s%08"PRId64".png", destdir, nameprefix, frame_cnt);
 		printf ("* Wrote %"PRId64" files. Last '%s'\n", frame_cnt, filename);
 		printf (
 				"* Encode movie with e.g.\n"
-				" ffmpeg -r %d/%d -i %s/t%%07d.png -qscale:v 0 %s.avi\n",
-				rate.fps.num, rate.fps.den, destdir, destdir);
+				" ffmpeg -r %d/%d -i %s/%s%%08d.png -qscale:v 0 %s.avi\n",
+				rate.fps.num, rate.fps.den, destdir, nameprefix, destdir);
 	}
 
 #if 0 // suggest audio if duration > 2 sec
@@ -1354,10 +1367,10 @@ int main (int argc, char **argv) {
 			, (int)floor ((fn_end - fn_start) / ceil (rate.fps.num / (float)rate.fps.den) - 2)
 			);
 	printf (
-			" ffmpeg -r %d/%d -i %s/t%%07d.png -i soundtrack.wav -shortest -preset placebo -pix_fmt yuv420p -strict -2 %s.mp4\n"
+			" ffmpeg -r %d/%d -i %s/%s%%08d.png -i soundtrack.wav -shortest -preset placebo -pix_fmt yuv420p -strict -2 %s.mp4\n"
 			" rm soundtrack.wav\n"
 			" rm -rf %s/\n"
-			, rate.fps.num, rate.fps.den, destdir, destdir, destdir);
+			, rate.fps.num, rate.fps.den, destdir, nameprefix, destdir, destdir);
 
 #endif
 	return 0;
