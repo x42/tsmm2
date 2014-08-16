@@ -1,0 +1,6 @@
+*.o
+*.swp
+/cscope.*
+/tags
+
+/tsmm2
