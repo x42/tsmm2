@@ -1,6 +1,5 @@
 #!/bin/bash
 
-# TODO: use a 'make' target for this, parallel execution
 # TODO: nice parameters, use mktemp
 
 #target dir
@@ -18,7 +17,7 @@ export SOX=sox
 export FFMPEG_OPTS="-v 16 -strict -2 -pix_fmt yuv420p -y"
 export EXT="mp4"
 
-export TSMM2_OPTS=""
+export TSMM2_OPTS="-j4"
 export DURATION=720  # in seconds
 export HEIGHT=360    # px height
 

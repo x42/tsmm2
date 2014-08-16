@@ -27,9 +27,13 @@
 #include <cairo/cairo.h>
 #include <pango/pango.h>
 #include <pango/pangocairo.h>
+#include <pthread.h>
 
 #ifndef MAX
 #define MAX(A,B) ( (A) < (B) ? (B) : (A) )
+#endif
+#ifndef MIN
+#define MIN(A,B) ( (A) < (B) ? (A) : (B) )
 #endif
 
 #ifdef CUSTOM_PNG_WRITER
@@ -238,7 +242,6 @@ static void smpte02 (cairo_t* cr, const float w, const float h) {
 	float x0, y0;
 	float x1, y1;
 
-	y0 = 0;
 	y0 = 0;
 	x1 = w / 8;
 	y1 = ceil (mb - (lb - mb));
@@ -846,6 +849,81 @@ BAIL1:
 }
 #endif
 
+/*** thread worker */
+
+static pthread_mutex_t  cnt_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t  thr_mutex = PTHREAD_MUTEX_INITIALIZER;
+static volatile int64_t frame_cnt;
+static volatile int     run_cnt;
+
+typedef struct workNfo {
+	pthread_t self;
+	float w;
+	float h;
+	int64_t wk_start;
+	int64_t wk_end;
+	int64_t fn_start;
+	int64_t fn_end;
+	TimecodeRate *rate;
+	cairo_surface_t *bg;
+	const char * title_text;
+	const char * destdir;
+	int compression;
+} workNfo;
+
+static void * worker (void *arg) {
+	workNfo *n = (workNfo*) arg;
+	int64_t i = 0;
+	char filename[1024] = "";
+	cairo_surface_t * ct;
+	cairo_t* cr;
+	const float w = n->w;
+	const float h = n->h;
+	const int64_t fn_start = n->fn_start;
+	const int64_t wk_start = n->wk_start;
+	const int64_t wk_end   = n->wk_end;
+	const int compression = n->compression;
+
+	ct = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, w, h);
+	cr = cairo_create (ct);
+
+	for (i = wk_start; i < wk_end; ++i) {
+		cairo_set_source_surface (cr, n->bg, 0, 0);
+		cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
+		cairo_paint (cr);
+		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
+		timecode (cr, w, h, n->rate, i + fn_start);
+
+		if (i == 0 && wk_start == 0) {
+			splash (cr, w, h, n->rate, n->fn_start, n->fn_end, n->title_text);
+		}
+
+		sprintf (filename, "%s/t%07"PRId64".png", n->destdir, i);
+#ifdef CUSTOM_PNG_WRITER
+		if (write_png (ct, filename, compression))
+#else
+		if (cairo_surface_write_to_png (ct, filename))
+#endif
+		{
+			fprintf (stderr, "Writing to '%s' failed\n", filename);
+			break;
+		}
+		pthread_mutex_lock (&cnt_mutex);
+		++frame_cnt;
+		pthread_mutex_unlock (&cnt_mutex);
+	}
+
+	cairo_destroy (cr);
+	cairo_surface_destroy (ct);
+
+	pthread_mutex_lock (&thr_mutex);
+	--run_cnt;
+	pthread_mutex_unlock (&thr_mutex);
+
+	pthread_exit (0);
+	return NULL;
+}
+
 /*** main application code and helpers */
 
 static int test_dir (char *d) {
@@ -869,12 +947,13 @@ static void usage (int status) {
   -c, --color-only          do not render stripe patterns\n\
   -C, --compression <c>     PNG/zlib compression level (0-9)\n\
                             0: no compression, 1: fastest, 9: best\n\
+  -d, --duration <sec>      set duration in seconds (default: 5)\n\
   -f, --fps <num>[/den]     set frame-rate (default: 25/1)\n\
   -F, --font <name>         font for timecode and info\n\
                             default: DroidSansMono\n\
-  -d, --duration <sec>      set duration in seconds (default: 5)\n\
   -h, --help                display this help and exit\n\
   -H, --height <px>         specify image height (default: 360)\n\
+  -j, --concurrency <n>     number of parallel jobs (default: 2)\n\
   -p, --progress            report progress\n\
   -s, --start-frame <fn>    specify timecode start frame number\n\
                             (default: 0)\n\
@@ -904,7 +983,7 @@ Standard Framerates:\n\
 \n\
 The speed limiting factor of this tool is PNG compression. When built with\n\
 zlib/png support, the -C option provides some control over this. Since the\n\
-images are encoded in a subsequent step, reducing PNG compression to a minumum\n\
+images are encoded in a subsequent step, reducing PNG compression to a minimum\n\
 is highly recommended and also the default (-C 1).\n\
 Disabling compression completely (-C 0) will only result in a marginal speed\n\
 improvement compared to -C 1 and result in huge files.\n\
@@ -926,11 +1005,12 @@ static struct option const long_options[] =
 	{"no-border",    no_argument, 0, 'b'},
 	{"color-only",   no_argument, 0, 'c'},
 	{"compression",  required_argument, 0, 'C'},
+	{"duration",     required_argument, 0, 'd'},
 	{"fps",          required_argument, 0, 'f'},
 	{"font",         required_argument, 0, 'F'},
-	{"duration",     required_argument, 0, 'd'},
 	{"help",         no_argument, 0, 'h'},
 	{"height",       required_argument, 0, 'H'},
+	{"concurrency",  required_argument, 0, 'j'},
 	{"progress",     no_argument, 0, 'p'},
 	{"start-frame",  required_argument, 0, 's'},
 	{"smpte-hdv",    no_argument, 0, 'S'},
@@ -942,6 +1022,7 @@ static struct option const long_options[] =
 };
 
 int main (int argc, char **argv) {
+	int i;
 	uint8_t verbose = 0;
 	uint8_t mode = 1; // 0x1: add stripes, 0x2: use HDV/219:2002, 0x04: no border
 	float w, h;
@@ -957,6 +1038,7 @@ int main (int argc, char **argv) {
 #ifdef CUSTOM_PNG_WRITER
 	int compression = Z_BEST_SPEED; // Z_BEST_COMPRESSION
 #endif
+	int jobs;
 
 	/* defaults */
 	destdir[0] = '\0';
@@ -968,6 +1050,7 @@ int main (int argc, char **argv) {
 	h = 360;
 	fn_start = 0;
 	duration = 5.0;
+	jobs = 2;
 
 	int c;
 	while ((c = getopt_long (argc, argv,
@@ -980,6 +1063,7 @@ int main (int argc, char **argv) {
 			   "d:" /* duration */
 			   "h"  /* help */
 			   "H:" /* height */
+			   "j:" /* concurrency */
 			   "p"  /* progress */
 			   "s:" /* start frame */
 			   "S"  /* smpte-hdv */
@@ -1014,7 +1098,7 @@ int main (int argc, char **argv) {
 #ifdef CUSTOM_PNG_WRITER
 				compression = atoi (optarg);
 #else
-				fprintf(stderr, "zlib/png is not supported in this version, -C ignored.\n");
+				fprintf (stderr, "zlib/png is not supported in this version, -C ignored.\n");
 #endif
 				break;
 
@@ -1038,6 +1122,10 @@ int main (int argc, char **argv) {
 
 			case 'H':
 				h = atoi (optarg);
+				break;
+
+			case 'j':
+				jobs = atoi (optarg);
 				break;
 
 			case 'p':
@@ -1128,6 +1216,7 @@ int main (int argc, char **argv) {
 	if (rintf (100. * rate.fps.num / (float)rate.fps.den) == 2997) {
 		rate.drop = 1;
 	}
+	jobs = MAX(1, MIN(jobs, fn_end - fn_start));
 
 	// sanity checks, part two
 
@@ -1144,8 +1233,8 @@ int main (int argc, char **argv) {
 	if (verbose & 1) {
 		char tcs[13], tce[13];
 		TimecodeTime tc;
-		printf ("* Geometry:   %.0f x %.0f px\n", w, h);
-		printf ("* Framerate:  %d / %d (%.3f) %s timecode\n",
+		printf ("* Geometry:    %.0f x %.0f px\n", w, h);
+		printf ("* Framerate:   %d / %d (%.3f) %s timecode\n",
 				rate.fps.num, rate.fps.den,
 				(rate.fps.num / (double)rate.fps.den),
 				rate.drop ? "drop-frame" : "non-drop-frame");
@@ -1153,13 +1242,19 @@ int main (int argc, char **argv) {
 		format_tc (tcs, &rate, &tc);
 		framenumber_to_timecode (&tc, &rate, fn_end -1);
 		format_tc (tce, &rate, &tc);
-		printf ("* Timecode:   %s -> %s\n", tcs, tce);
-		printf ("* File first: %s/t%07d.png\n", destdir, 0);
-		printf ("* File last:  %s/t%07"PRId64".png\n", destdir, (fn_end - fn_start - 1));
+		printf ("* Timecode:    %s -> %s\n", tcs, tce);
+		printf ("* File first:  %s/t%07d.png\n", destdir, 0);
+		printf ("* File last:   %s/t%07"PRId64".png\n", destdir, (fn_end - fn_start - 1));
+		printf ("* Concurrency: %d\n", jobs);
 	}
 
 	snprintf (font, 128, "%s %d", fontname, MAX(6, (int)rint (h/22)));
 	font_desc = pango_font_description_from_string (font);
+
+	if (verbose & 2) {
+		printf ("progress: %5.1f%%\r", 0.f);
+		fflush (stdout);
+	}
 
 	// create static test-screen
 	cairo_surface_t * cs = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, w, h);
@@ -1176,55 +1271,67 @@ int main (int argc, char **argv) {
 	cairo_destroy (cr);
 
 	// render timecode
-	cairo_surface_t * ct = cairo_image_surface_create (CAIRO_FORMAT_ARGB32, w, h);
-	cr = cairo_create (ct);
 
-	int64_t i = 0;
-	char filename[1024] = "";
-	for (i = 0; i + fn_start < fn_end; ++i) {
-		cairo_set_source_surface (cr, cs, 0, 0);
-		cairo_set_operator (cr, CAIRO_OPERATOR_SOURCE);
-		cairo_paint (cr);
-		cairo_set_operator (cr, CAIRO_OPERATOR_OVER);
-		timecode (cr, w, h, &rate, i + fn_start);
+	int64_t spl = (fn_end - fn_start) / jobs;
+	workNfo *nfo = malloc (jobs * sizeof(workNfo));
 
-		if (i == 0) {
-			splash(cr, w, h, &rate, fn_start, fn_end, title_text);
-		}
+	int64_t off = 0;;
+	for (i = 0; i < jobs; ++i) {
+		nfo[i].w = w;
+		nfo[i].h = h;
+		nfo[i].rate = &rate;
+		nfo[i].bg = cs;
+		nfo[i].title_text = title_text;
+		nfo[i].destdir = destdir;
+		nfo[i].compression = compression;
+		nfo[i].fn_start = fn_start;
+		nfo[i].fn_end = fn_end;
 
-		sprintf (filename, "%s/t%07"PRId64".png", destdir, i);
-#ifdef CUSTOM_PNG_WRITER
-		if (write_png (ct, filename, compression))
-#else
-		if (cairo_surface_write_to_png (ct, filename))
-#endif
-		{
-			fprintf (stderr, "Writing to '%s' failed\n", filename);
-			break;
-		}
-		if (verbose & 2) {
-			static int lp = -1;
-			float pr = 100.f * i / (fn_end - fn_start - 1);
-			if (rint (pr * 5) != lp || pr > 99.f) {
-				printf ("progress: %5.1f%%\r", pr);
-				fflush (stdout);
-				lp = rint (pr * 5);
-			}
+		nfo[i].wk_start = off;
+		off += spl;
+		nfo[i].wk_end = (i == jobs - 1) ? (fn_end - fn_start) : (off);
+	}
+
+	frame_cnt = -1;
+	run_cnt = 0;
+
+	for (i = 0; i < jobs; ++i) {
+		pthread_mutex_lock (&thr_mutex);
+		++run_cnt;
+		pthread_mutex_unlock (&thr_mutex);
+		if (pthread_create (&nfo[i].self, NULL, worker, (void*) &nfo[i])) {
+			fprintf (stderr, "Fatal error: Cannot start thread.\n");
+			exit (1);
 		}
 	}
-	cairo_destroy (cr);
+
+	while (run_cnt > 0) {
+		usleep (250);
+		if (verbose & 2 && frame_cnt > 0) {
+			const float pr = 100.f * frame_cnt / (fn_end - fn_start - 1);
+			printf ("progress: %5.1f%%\r", pr);
+			fflush (stdout);
+		}
+	}
+
+	for (i = 0; i < jobs; ++i) {
+		pthread_join (nfo[i].self, NULL);
+	}
+	free (nfo);
+
 	cairo_surface_destroy (cs);
-	cairo_surface_destroy (ct);
 	pango_font_description_free (font_desc);
 
 	if (verbose & 2) {
-		printf ("\n");
+		printf ("progress: %5.1f%%\n", 100.f * frame_cnt / (fn_end - fn_start - 1));
 	}
 
 	if (verbose & 1) {
-		printf ("Wrote %"PRId64" files. Last '%s'\n", i, filename);
+		char filename[1024] = "";
+		sprintf (filename, "%s/t%07"PRId64".png", destdir, frame_cnt);
+		printf ("* Wrote %"PRId64" files. Last '%s'\n", frame_cnt, filename);
 		printf (
-				"Encode movie with e.g.\n"
+				"* Encode movie with e.g.\n"
 				" ffmpeg -r %d/%d -i %s/t%%07d.png -qscale:v 0 %s.avi\n",
 				rate.fps.num, rate.fps.den, destdir, destdir);
 	}

@@ -11,7 +11,7 @@ ifeq ($(shell pkg-config --exists cairo pango pangocairo || echo no), no)
   $(error "mandatory pango/cairo libraries were not found.")
 endif
 
-override CFLAGS+=`pkg-config --cflags cairo pango pangocairo`
+override CFLAGS+=`pkg-config --cflags cairo pango pangocairo` -pthread
 override LOADLIBES=`pkg-config --libs cairo pango pangocairo` -lm
 
 ifeq ($(shell pkg-config --exists libpng zlib && echo yes), yes)
