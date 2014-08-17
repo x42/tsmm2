@@ -724,8 +724,8 @@ static void timecode (cairo_t* cr,
 	cairo_stroke (cr);
 
 	// b/w box to indicate frame progression
-	y0 = i_y1 - sy1 * .5;
-	y1 = sy1 * .3;
+	y0 = floor(i_y1 - sy1 * .5);
+	y1 = ceil(sy1 * .3);
 	x0 = sx1 * .25;
 	x1 = sx1 * .5;
 
@@ -736,11 +736,11 @@ static void timecode (cairo_t* cr,
 			cairo_set_source_rgba (cr, 1, 1, 1, 0.7);
 		}
 		const float r = rint (x0 + (i + 1) * x1) - rint (x0 + i * x1);
-		cairo_rectangle (cr, rint (x0 + i * x1), y0, r, ceil (y1));
+		cairo_rectangle (cr, rint (x0 + i * x1), y0, r, y1);
 		cairo_fill (cr);
 	}
 
-	y0 = i_y1 - sy1 * .8;
+	y0 += y1;
 	x1 = sx1 * .25;
 	for (i = 0; i < 4; ++i) {
 		if ((4 + fn - i) % 4) {
@@ -749,7 +749,7 @@ static void timecode (cairo_t* cr,
 			cairo_set_source_rgba (cr, 1, 1, 1, 0.7);
 		}
 		const float r = rint (x0 + (i + 1) * x1) - rint (x0 + i * x1);
-		cairo_rectangle (cr, rint (x0 + i * x1), y0, r, ceil (y1));
+		cairo_rectangle (cr, rint (x0 + i * x1), y0, r, y1);
 		cairo_fill (cr);
 	}
 
