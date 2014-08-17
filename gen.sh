@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #target dir
-export DESTDIR=$HOME/tmp/tsmm3
+export DESTDIR=$HOME/tmp/tsmm2
 
 #temp dirs -- `mktemp -d` ?!
 export PICDIR=/tmp/tsmm2
@@ -34,7 +34,7 @@ function genvid
 	trap 'rm -f "${SNDDIR}/silence1.wav" "${SNDDIR}/sin1k.wav" "${SNDDIR}/silence.wav" "${SNDDIR}/onesec.wav" "${SNDDIR}/soundtrack.wav"; rm -rf "${PICDIR}"' exit
 	./tsmm2 -p -f $2 -H ${HEIGHT} -d ${DURATION} ${TSMM2_OPTS} "${PICDIR}"
 	$SOX -n -r 48000 -c 2 -b16 "${SNDDIR}/silence1.wav" trim 0.0 1.0
-	$SOX -n -r 48000 -c 2 -b16 "${SNDDIR}/sin1k.wav" synth $3 sine 1000 gain -18 fade 0 0 24s 0
+	$SOX -n -r 48000 -c 2 -b16 "${SNDDIR}/sin1k.wav" synth $3 sine 1000 gain -18 fade 0 0 48s 0
 	$SOX -n -r 48000 -c 2 -b16 "${SNDDIR}/silence.wav" trim 0.0 $4
 	$SOX "${SNDDIR}/sin1k.wav" "${SNDDIR}/silence.wav" "${SNDDIR}/onesec.wav"
 	$SOX -V1 "${SNDDIR}/onesec.wav" -t wav - repeat ${SNDLEN} | $SOX "${SNDDIR}/silence1.wav" -t wav - "${SNDDIR}/soundtrack.wav"
