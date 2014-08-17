@@ -8,10 +8,8 @@ tsmm2 \- Time Stamped Movie Maker
 .SH DESCRIPTION
 tsmm2 \- time stamped movie maker.
 .SH OPTIONS
-.HP
-\fB\-a\fR, \fB\-\-aspect\fR ratio
 .TP
-<num>[/den]
+\fB\-a\fR, \fB\-\-aspect\-ratio\fR <num>[/den]
 set aspect ratio (default 16:9)
 as SAR = 1, this defines the image width
 .TP
@@ -71,9 +69,14 @@ print version information and exit
 This tool is intended to create reference video test patterns with on\-screen
 timecode to ensure technical quality of production.
 .PP
-Despite the name, tsmm actually only creates a video frame sequence which can
-be encoded into a movie\-file using e.g ffmpeg or mencoder.
-Upon completion, tsmm2 suggests a ffmpeg encode command.
+Tsmm2 can generate color bars in SMPTE ECR 1\-1978 and SMPTE RP 219:2002 style,
+line patterns and add a frame number + timecode overlay. The configuration
+if flexible and the geometry of the resulting video variable.
+.PP
+Despite the name, tsmm2 only creates a video frame sequence which can then
+be encoded into a video\-file using e.g ffmpeg or mencoder or similar tools.
+This allows to derive multiple format/codec combinations from the same image
+sequence. Upon completion, tsmm2 suggests a simple ffmpeg encode command.
 .SS "Common frame-heights for 16:9 aspect:"
 .IP
 1080, 720, 540, 360, 288, 270, 180
@@ -83,7 +86,9 @@ Upon completion, tsmm2 suggests a ffmpeg encode command.
 .SS "Standard Framerates:"
 .IP
 60/1, 50/1, 30/1, 25/1, 24/1
-60000/1001, 3000/1001, 24000/1001, 23000/1001
+60000/1001, 30000/1001, 25000/1001, 24000/1001
+.PP
+(29.97 ie 30000/1001 always used drop\-frame timecode)
 .PP
 The speed limiting factor of this tool is PNG compression. When built with
 zlib/png support, the \fB\-C\fR option provides some control over this. Since the
@@ -96,7 +101,7 @@ libcairo's default (when this tool is built without zlib/png support) is \fB\-C\
 .IP
 mkdir /tmp/tsmm2;
 tsmm2 \fB\-v\fR \fB\-f\fR 30/1 \fB\-H\fR 720 \fB\-d\fR 300 /tmp/tsmm2;
-ffmpeg \fB\-r\fR 30/1 \fB\-i\fR /tmp/tsmm2/t%08d.png /tmp/tsmm2s.mp4
+ffmpeg \fB\-r\fR 30/1 \fB\-i\fR /tmp/tsmm2/t%08d.png /tmp/tsmm2.mp4
 .SH "REPORTING BUGS"
 Report bugs to Robin Gareus <robin@gareus.org>
 .br

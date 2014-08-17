@@ -965,8 +965,8 @@ static void usage (int status) {
 	printf ("tsmm2 - time stamped movie maker.\n\n");
 	printf ("Usage: tsmm2 [ OPTIONS ] <dirname>\n\n");
 	printf ("Options:\n\
-  -a, --aspect ratio        \n\
-      <num>[/den]           set aspect ratio (default 16:9)\n\
+  -a, --aspect-ratio <num>[/den]\n\
+                            set aspect ratio (default 16:9)\n\
                             as SAR = 1, this defines the image width\n\
   -b, --no-border           do not render border nor alignment markers\n\
   -c, --color-only          do not render stripe patterns\n\
@@ -995,9 +995,14 @@ static void usage (int status) {
 This tool is intended to create reference video test patterns with on-screen\n\
 timecode to ensure technical quality of production.\n\
 \n\
-Despite the name, tsmm actually only creates a video frame sequence which can\n\
-be encoded into a movie-file using e.g ffmpeg or mencoder.\n\
-Upon completion, tsmm2 suggests a ffmpeg encode command.\n\
+Tsmm2 can generate color bars in SMPTE ECR 1-1978 and SMPTE RP 219:2002 style,\n\
+line patterns and add a frame number + timecode overlay. The configuration\n\
+if flexible and the geometry of the resulting video variable.\n\
+\n\
+Despite the name, tsmm2 only creates a video frame sequence which can then\n\
+be encoded into a video-file using e.g ffmpeg or mencoder or similar tools.\n\
+This allows to derive multiple format/codec combinations from the same image\n\
+sequence. Upon completion, tsmm2 suggests a simple ffmpeg encode command.\n\
 \n\
 Common frame-heights for 16:9 aspect:\n\
  1080, 720, 540, 360, 288, 270, 180\n\
@@ -1005,7 +1010,8 @@ Common frame-heights for 4:3 aspect:\n\
  576, 240\n\
 Standard Framerates:\n\
  60/1, 50/1, 30/1, 25/1, 24/1\n\
- 60000/1001, 3000/1001, 24000/1001, 23000/1001\n\
+ 60000/1001, 30000/1001, 25000/1001, 24000/1001\n\
+(29.97 ie 30000/1001 always used drop-frame timecode)\n\
 \n\
 The speed limiting factor of this tool is PNG compression. When built with\n\
 zlib/png support, the -C option provides some control over this. Since the\n\
@@ -1018,7 +1024,7 @@ libcairo's default (when this tool is built without zlib/png support) is -C 6.\n
 Examples:\n\
  mkdir /tmp/tsmm2;\n\
  tsmm2 -v -f 30/1 -H 720 -d 300 /tmp/tsmm2;\n\
- ffmpeg -r 30/1 -i /tmp/tsmm2/t%%08d.png /tmp/tsmm2s.mp4\n\
+ ffmpeg -r 30/1 -i /tmp/tsmm2/t%%08d.png /tmp/tsmm2.mp4\n\
 \n");
 	printf ("Report bugs to Robin Gareus <robin@gareus.org>\n"
 	        "Website and tracker: <https://github.com/x42/tsmm2>\n");
