@@ -141,96 +141,102 @@ static void triangle (cairo_t* cr, const float x, const float y, const float dir
 }
 
 static void smpte78 (cairo_t* cr, const float w, const float h) {
-		/* SMPTE ECR 1-1978 approx as image */
+	/* SMPTE ECR 1-1978 approx as image -
+	 * true 1-1978 is impossible as image due to 'sub-blacks'
+	 */
 	const float sy1 = h / 3.5;
 
 	float x0 = 0;
 	float y0 = 0;
 	float x1 = w / 7;
-	float y1 = sy1 * 2.25;
+	float y1 = ceil(sy1 * 2.25);
 
 	// main color stripes
 	cairo_set_source_rgba (cr, .75, .75, .75, 1.0); // gray
-	cairo_rectangle (cr, rint (x0 + 0 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 0 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .75, .75, .00, 1.0); // yellow
-	cairo_rectangle (cr, rint (x0 + 1 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 1 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .00, .75, .75, 1.0); // cyan
-	cairo_rectangle (cr, rint (x0 + 2 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 2 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .00, .75, .00, 1.0); // green
-	cairo_rectangle (cr, rint (x0 + 3 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 3 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .75, .00, .75, 1.0); // magenta
-	cairo_rectangle (cr, rint (x0 + 4 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 4 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .75, .00, .00, 1.0); // red
-	cairo_rectangle (cr, rint (x0 + 5 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 5 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .00, .00, .75, 1.0); // blue
 	cairo_rectangle (cr, floor (x0 + 6 * x1), y0, ceil (x1), y1);
 	cairo_fill (cr);
 
 	// inverse colors
-	y0 = sy1 * 2.25;
-	y1 = sy1 * 0.25;
+	y0 = floor(sy1 * 2.25);
+	y1 = ceil(sy1 * 0.25);
 	cairo_set_source_rgba (cr, .00, .00, .75, 1.0); // blue
-	cairo_rectangle (cr, rint (x0 + 0 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 0 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .075, .075, .075, 1.0); // almost black
-	cairo_rectangle (cr, rint (x0 + 1 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 1 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .75, .0, .75, 1.0); // magenta
-	cairo_rectangle (cr, rint (x0 + 2 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 2 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .075, .075, .075, 1.0); // almost black
-	cairo_rectangle (cr, rint (x0 + 3 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 3 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .00, .75, .75, 1.0); // cyan
-	cairo_rectangle (cr, rint (x0 + 4 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 4 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .075, .075, .075, 1.0); // almost black
-	cairo_rectangle (cr, rint (x0 + 5 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 5 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .75, .75, .75, 1.0); // gray
 	cairo_rectangle (cr, floor (x0 + 6 * x1), y0, ceil (x1), y1);
 	cairo_fill (cr);
 
 	// bottom row
-	y0 = sy1 * 2.5;
-	y1 = sy1;
-
-	// bottom right-end blacks
-	cairo_set_source_rgba (cr, .075, .075, .075, 1.0); // almost black
-	cairo_rectangle (cr, floor (x0 + 6 * x1), y0, ceil (x1), y1);
-	cairo_fill (cr);
-	x0 = (x0 + 5 * x1);
-	x1 /= 3.;
-	cairo_set_source_rgba (cr, .04, .04, .04, 1.0); // nearly black
-	cairo_rectangle (cr, floor (x0 + 0 * x1), y0, ceil (x1), y1);
-	cairo_fill (cr);
-	cairo_set_source_rgba (cr, .075, .075, .075, 1.0); // almost black
-	cairo_rectangle (cr, floor (x0 + 1 * x1), y0, ceil (x1), y1);
-	cairo_fill (cr);
-	cairo_set_source_rgba (cr, .11, .11, .11, 1.0); // coffee black
-	cairo_rectangle (cr, floor (x0 + 2 * x1), y0, ceil (x1), y1);
-	cairo_fill (cr);
+	y0 = floor(sy1 * 2.5);
+	y1 = ceil(h - y0);
 
 	// saturated color blocks
+	x0 = floor(x0 + 5 * x1);
 	x1 = x0 / 4;
 	x0 = 0;
 	cairo_set_source_rgba (cr, .00, .13, .30, 1.0); // dark blue
-	cairo_rectangle (cr, rint (x0 + 0 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 0 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 1.0); // really white
-	cairo_rectangle (cr, rint (x0 + 1 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 1 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .20, .00, .42, 1.0); // violet
-	cairo_rectangle (cr, rint (x0 + 2 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 2 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .075, .075, .075, 1.0); // almost black
-	cairo_rectangle (cr, rint (x0 + 3 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 3 * x1), y0, ceil (x1 + 1), y1);
+	cairo_fill (cr);
+
+	// bottom right-end blacks
+	x0 = floor(x0 + 4 * x1);
+	x1 = w / 21.;
+	cairo_set_source_rgba (cr, .04, .04, .04, 1.0); // nearly black
+	cairo_rectangle (cr, rint (x0 + 0 * x1), y0, ceil (x1 + 1), y1);
+	cairo_fill (cr);
+	cairo_set_source_rgba (cr, .075, .075, .075, 1.0); // almost black
+	cairo_rectangle (cr, rint (x0 + 1 * x1), y0, ceil (x1 + 1), y1);
+	cairo_fill (cr);
+	cairo_set_source_rgba (cr, .11, .11, .11, 1.0); // coffee black
+	cairo_rectangle (cr, floor (x0 + 2 * x1), y0, ceil (x1 + 1), y1);
+	cairo_fill (cr);
+
+	x0 = 0;
+	x1 = w / 7.;
+	cairo_set_source_rgba (cr, .075, .075, .075, 1.0); // almost black
+	cairo_rectangle (cr, floor (x0 + 6 * x1), y0, ceil (x1), y1);
 	cairo_fill (cr);
 }
 
@@ -246,91 +252,83 @@ static void smpte02 (cairo_t* cr, const float w, const float h) {
 	x1 = w / 8;
 	y1 = ceil (mb - (lb - mb));
 
+	// left - side gray
 	cairo_set_source_rgba (cr, .41, .41, .41, 1.0);
-	cairo_rectangle (cr, 0, y0, ceil (x1), y1);
-	cairo_fill (cr);
-	cairo_rectangle (cr, w - ceil (x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, 0, y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 
 	x0 = w / 8;
 	x1 = w * 3 / 28;
 	// main color stripes
 	cairo_set_source_rgba (cr, .75, .75, .75, 1.0); // gray
-	cairo_rectangle (cr, rint (x0 + 0 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 0 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .75, .75, .00, 1.0); // yellow
-	cairo_rectangle (cr, rint (x0 + 1 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 1 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .00, .75, .75, 1.0); // cyan
-	cairo_rectangle (cr, rint (x0 + 2 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 2 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .00, .75, .00, 1.0); // green
-	cairo_rectangle (cr, rint (x0 + 3 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 3 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .75, .00, .75, 1.0); // magenta
-	cairo_rectangle (cr, rint (x0 + 4 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 4 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .75, .00, .00, 1.0); // red
-	cairo_rectangle (cr, rint (x0 + 5 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 5 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .00, .00, .75, 1.0); // blue
-	cairo_rectangle (cr, floor (x0 + 6 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 6 * x1), y0, ceil (x1 + 1), y1);
+	cairo_fill (cr);
+
+	// right - side gray
+	x1 = w / 8;
+	cairo_set_source_rgba (cr, .41, .41, .41, 1.0);
+	cairo_rectangle (cr, ceil(w - x1), y0, ceil(x1), y1);
 	cairo_fill (cr);
 
 	y0 = floor (mb - (lb - mb));
 	y1 = ceil (lb - mb);
 	x0 = 0;
-	x1 = w / 8;
+	x1 = ceil(1 + w / 8);
 
 	// left column
 	cairo_set_source_rgba (cr, .000, 1.00, 1.00, 1.0);
-	cairo_rectangle (cr, x0, y0, ceil (x1), y1);
+	cairo_rectangle (cr, x0, y0, x1, y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, 1.00, 1.00, .000, 1.0);
-	cairo_rectangle (cr, x0, y0 + y1, ceil (x1), y1);
+	cairo_rectangle (cr, x0, y0 + y1, x1, y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .175, .175, .175, 1.0);
-	cairo_rectangle (cr, x0, lb, ceil (x1), ceil (h - lb));
+	cairo_rectangle (cr, x0, lb, x1, ceil (h - lb));
 	cairo_fill (cr);
 
 	// gradient bar
 	x0 = w / 8;
 	x1 = w * 3 / 28;
 
-	// fixed colors left and top of gradient
+	// fixed colors 2nd col
 	cairo_set_source_rgba (cr, .000, .125, .300, 1.0); // CHECK
-	cairo_rectangle (cr, x0, y0, ceil (x1), y1);
-	cairo_fill (cr);
-	cairo_set_source_rgba (cr, .75, .75, .75, 1.0);
-	cairo_rectangle (cr, x0 + x1, y0, ceil (6 * x1), y1);
+	cairo_rectangle (cr, rint(x0), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .200, .000, .415, 1.0); // CHECK
-	cairo_rectangle (cr, x0, y0 + y1, ceil (x1), y1);
+	cairo_rectangle (cr, rint(x0), y0 + y1, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 
-	cairo_pattern_t * pat = cairo_pattern_create_linear (x0 + x1, 0, ceil (6 * x1), 0);
+	// gray above gradient
+	cairo_set_source_rgba (cr, .75, .75, .75, 1.0);
+	cairo_rectangle (cr, rint(x0 + x1), y0, ceil (1 + 6 * x1), y1);
+	cairo_fill (cr);
+
+	// gradient
+	cairo_pattern_t * pat = cairo_pattern_create_linear (x0 + x1, 0, ceil (1 + 6 * x1), 0);
 	cairo_pattern_add_color_stop_rgba (pat, 0.0, .020, .020, .020, 1.0);
 	cairo_pattern_add_color_stop_rgba (pat, 1.0,  1.0,  1.0,  1.0, 1.0);
 	cairo_set_source (cr, pat);
-	cairo_rectangle (cr, x0 + x1, floor (y0 + y1), floor (6 * x1), floor (y1));
+	cairo_rectangle (cr, x0 + x1, floor (y0 + y1), ceil (1 + 6 * x1), y1);
 	cairo_fill (cr);
 	cairo_pattern_destroy (pat);
-
-
-	// right column
-	y0 = floor (mb - (lb - mb));
-	y1 = ceil (lb - mb);
-	x1 = w / 8;
-	x0 = w - x1;
-	cairo_set_source_rgba (cr, .000, .000, 1.00, 1.0);
-	cairo_rectangle (cr, x0, y0, ceil (x1), y1);
-	cairo_fill (cr);
-	cairo_set_source_rgba (cr, 1.00, .000, .000, 1.0);
-	cairo_rectangle (cr, x0, y0 + y1, ceil (x1), y1);
-	cairo_fill (cr);
-	cairo_set_source_rgba (cr, .175, .175, .175, 1.0);
-	cairo_rectangle (cr, x0, lb, ceil (x1), ceil (h - lb));
-	cairo_fill (cr);
 
 	// bottom row left half
 	x0 = w / 8;
@@ -339,40 +337,56 @@ static void smpte02 (cairo_t* cr, const float w, const float h) {
 	x1 = w * 3 / 56; // 1/2 sub-spacing
 
 	cairo_set_source_rgba (cr, .020, .020, .020, 1.0);
-	cairo_rectangle (cr, x0, y0, ceil (3 * x1), y1);
+	cairo_rectangle (cr, x0, y0, ceil (3 * x1 + 1), y1);
 	cairo_fill (cr);
+
 	cairo_set_source_rgba (cr, 1.00, 1.00, 1.00, 1.0);
 	cairo_rectangle (cr, rint (x0 + 3 * x1), y0, ceil (4 * x1), y1);
 	cairo_fill (cr);
 
 	// bottom row right half
 	cairo_set_source_rgba (cr, .020, .020, .020, 1.0);
-	cairo_rectangle (cr, rint (x0 + 7 * x1), y0, ceil (1 * x1), y1);
+	cairo_rectangle (cr, rint (x0 + 7 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 
 	x0 = x0 + 8 * x1;
 	x1 = w * 3 / 84; // 1/3 sub-spacing from now
 	// continue
-	cairo_rectangle (cr, rint (x0 + 0 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 0 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
-
 	cairo_set_source_rgba (cr, .000, .000, .000, 1.0);
-	cairo_rectangle (cr, rint (x0 + 1 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 1 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .020, .020, .020, 1.0);
-	cairo_rectangle (cr, rint (x0 + 2 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 2 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .040, .040, .040, 1.0);
-	cairo_rectangle (cr, rint (x0 + 3 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 3 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .020, .020, .020, 1.0);
-	cairo_rectangle (cr, rint (x0 + 4 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 4 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
 	cairo_set_source_rgba (cr, .050, .050, .050, 1.0);
-	cairo_rectangle (cr, rint (x0 + 5 * x1), y0, ceil (x1), y1);
+	cairo_rectangle (cr, rint (x0 + 5 * x1), y0, ceil (x1 + 1), y1);
 	cairo_fill (cr);
+
 	cairo_set_source_rgba (cr, .020, .020, .020, 1.0);
-	cairo_rectangle (cr, rint (x0 + 6 * x1), y0, ceil (3 * x1), y1);
+	cairo_rectangle (cr, rint (x0 + 6 * x1), y0, ceil (3 * x1 + 1), y1);
+	cairo_fill (cr);
+
+	// right column
+	y0 = floor (mb - (lb - mb));
+	y1 = ceil (lb - mb);
+	x1 = ceil(w / 8);
+	x0 = ceil(w * 7 / 8);
+	cairo_set_source_rgba (cr, .000, .000, 1.00, 1.0);
+	cairo_rectangle (cr, x0, y0, x1, y1);
+	cairo_fill (cr);
+	cairo_set_source_rgba (cr, 1.00, .000, .000, 1.0);
+	cairo_rectangle (cr, x0, y0 + y1, x1, y1);
+	cairo_fill (cr);
+	cairo_set_source_rgba (cr, .175, .175, .175, 1.0);
+	cairo_rectangle (cr, x0, lb, x1, ceil (h - lb));
 	cairo_fill (cr);
 }
 
@@ -399,18 +413,23 @@ static void testscreen (cairo_t* cr, const float w, const float h, uint8_t mode)
 	}
 
 	// inner main bounds
-	const float i_x0 = w / 8.;
-	const float i_x1 = w * 7. / 8.;
-	const float i_y0 = h / 12.;
-	const float i_y1 = h * 11. / 12.;
+	const float i_x0 = rint(w / 8.);
+	const float i_x1 = rint(w * 7. / 8.);
+	const float i_y0 = rint(h / 12.);
+	const float i_y1 = rint(h * 11. / 12.);
 
 	// separators
 	const float sx1  = (i_x1 - i_x0) / 6.;
 	const float sy1  = (i_y1 - i_y0) / 5.;
 
+
+	cairo_save(cr);
+
 	cairo_set_source_rgba (cr, 1.0, 1.0, 1.0, 1.0);
 	cairo_rectangle (cr, i_x0, i_y0, i_x1 - i_x0, i_y1 - i_y0);
+	cairo_clip_preserve (cr);
 	cairo_fill (cr);
+
 
 	// top-row vertical lines
 	cairo_set_source_rgba (cr, 0.0, 0.0, 0.0, 1.0);
@@ -423,35 +442,35 @@ static void testscreen (cairo_t* cr, const float w, const float h, uint8_t mode)
 		cairo_stroke (cr);
 	}
 	cairo_set_line_width (cr, 2.0);
-	x0 = rint (i_x0 + 2 * sx1);
-	for (i = 2; i < sx1; i += 4) {
+	x0 += .5;
+	for (; i < 2 * sx1; i += 4) {
 		cairo_move_to (cr, x0 + i, i_y0);
 		cairo_line_to (cr, x0 + i, i_y0 + sy1);
 		cairo_stroke (cr);
 	}
 	cairo_set_line_width (cr, 3.0);
-	x0 = rint (i_x0 + 3 * sx1) + .5;
-	for (i = 3; i < sx1; i += 6) {
+	x0 += .5;
+	for (; i < 3 * sx1; i += 6) {
 		cairo_move_to (cr, x0 + i, i_y0);
 		cairo_line_to (cr, x0 + i, i_y0 + sy1);
 		cairo_stroke (cr);
 	}
 	cairo_set_line_width (cr, 4.0);
-	x0 = rint (i_x0 + 4 * sx1);
-	for (i = 5; i < sx1; i += 8) {
+	x0 += .5;
+	for (; i < 4 * sx1; i += 8) {
 		cairo_move_to (cr, x0 + i, i_y0);
 		cairo_line_to (cr, x0 + i, i_y0 + sy1);
 		cairo_stroke (cr);
 	}
 	cairo_set_line_width (cr, 5.0);
-	x0 = rint (i_x0 + 5 * sx1) + .5; // TODO right-align
-	for (i = 7; i < sx1; i += 10) {
+	x0 += .5;
+	for (; i < 5 * sx1 + 8; i += 8) {
 		cairo_move_to (cr, x0 + i, i_y0);
 		cairo_line_to (cr, x0 + i, i_y0 + sy1);
 		cairo_stroke (cr);
 	}
 
-	// left-column horizontal lines
+	// left-column horizontal stripes
 	cairo_set_line_width (cr, 1.0);
 	y0 = rint (i_y0 + sy1) + .5;
 	for (i = 1; i < sy1; i += 2) {
@@ -460,22 +479,22 @@ static void testscreen (cairo_t* cr, const float w, const float h, uint8_t mode)
 		cairo_stroke (cr);
 	}
 	cairo_set_line_width (cr, 2.0);
-	y0 = rint (i_y0 + 2 * sy1);
-	for (i = 0; i < sy1; i += 4) {
+	y0 += .5;
+	for (; i < 2 * sy1; i += 4) {
 		cairo_move_to (cr, i_x0      , y0 + i);
 		cairo_line_to (cr, i_x0 + sx1, y0 + i);
 		cairo_stroke (cr);
 	}
 	cairo_set_line_width (cr, 3.0);
-	y0 = rint (i_y0 + 3 * sy1) + .5;
-	for (i = 3; i < sy1; i += 6) {
+	y0 += .5;
+	for (; i < 3 * sy1; i += 6) {
 		cairo_move_to (cr, i_x0      , y0 + i);
 		cairo_line_to (cr, i_x0 + sx1, y0 + i);
 		cairo_stroke (cr);
 	}
 	cairo_set_line_width (cr, 4.0);
-	y0 = rint (i_y0 + 4 * sy1);
-	for (i = 4; i < sy1; i += 8) {
+	y0 += .5;
+	for (; i < i_y1 + 8; i += 8) {
 		cairo_move_to (cr, i_x0      , y0 + i);
 		cairo_line_to (cr, i_x0 + sx1, y0 + i);
 		cairo_stroke (cr);
@@ -504,7 +523,7 @@ static void testscreen (cairo_t* cr, const float w, const float h, uint8_t mode)
 		for (i = 0; i <= 32; ++i) {
 			const float col = (32 - i) / 32.;
 			cairo_set_source_rgba (cr, col, col, col, 1.0);
-			cairo_rectangle (cr, floor (x0 + i * x1), y0, ceil (x1), y1);
+			cairo_rectangle (cr, floor (x0 + i * x1), y0, ceil (x1 + 1), y1);
 			cairo_fill (cr);
 		}
 
@@ -526,6 +545,8 @@ static void testscreen (cairo_t* cr, const float w, const float h, uint8_t mode)
 			smpte78 (cr, (i_x1 - i_x0),  (i_y1 - i_y0));
 		cairo_restore (cr);
 	}
+
+	cairo_restore(cr);
 
 
 	// TOP Layer -- image bounds
@@ -555,7 +576,6 @@ static void testscreen (cairo_t* cr, const float w, const float h, uint8_t mode)
 	triangle (cr, w - 32 * arrowscale, cy, M_PI * 3 / 2, arrowscale);
 	triangle (cr, w - 64 * arrowscale, cy, M_PI * 3 / 2, arrowscale);
 	triangle (cr, w - 96 * arrowscale, cy, M_PI * 3 / 2, arrowscale);
-
 }
 
 /*** part three: render Timecode on test-screen */
@@ -715,8 +735,9 @@ static void timecode (cairo_t* cr,
 		} else {
 			cairo_set_source_rgba (cr, 1, 1, 1, 0.7);
 		}
-	cairo_rectangle (cr, rint (x0 + i * x1), y0, ceil (x1), ceil (y1));
-	cairo_fill (cr);
+		const float r = rint (x0 + (i + 1) * x1) - rint (x0 + i * x1);
+		cairo_rectangle (cr, rint (x0 + i * x1), y0, r, ceil (y1));
+		cairo_fill (cr);
 	}
 
 	y0 = i_y1 - sy1 * .8;
@@ -727,7 +748,8 @@ static void timecode (cairo_t* cr,
 		} else {
 			cairo_set_source_rgba (cr, 1, 1, 1, 0.7);
 		}
-		cairo_rectangle (cr, rint (x0 + i * x1), y0, ceil (x1), ceil (y1));
+		const float r = rint (x0 + (i + 1) * x1) - rint (x0 + i * x1);
+		cairo_rectangle (cr, rint (x0 + i * x1), y0, r, ceil (y1));
 		cairo_fill (cr);
 	}
 
